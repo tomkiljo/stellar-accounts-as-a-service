@@ -1,4 +1,4 @@
-# Stellar Account as as Service
+# Stellar Accounts as as Service
 
 Stellar Account as as Service create for [Stellar Quest Bounties](https://github.com/tyvdh/stellar-quest-bounties/).
 
