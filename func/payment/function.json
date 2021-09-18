@@ -1,0 +1,12 @@
+{
+  "bindings": [
+    {
+      "name": "operation",
+      "type": "serviceBusTrigger",
+      "direction": "in",
+      "queueName": "payments",
+      "connection": "SERVICE_BUS_CONNECTION"
+    }
+  ],
+  "scriptFile": "../dist/payment/index.js"
+}

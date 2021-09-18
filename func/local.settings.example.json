@@ -1,0 +1,15 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+
+    "API_KEY_SALT": "",
+    "CUSTODIAN_SECRET": "",
+    "SQLDB_SERVER": "",
+    "SQLDB_DATABASE": "",
+    "SQLDB_USERNAME": "",
+    "SQLDB_PASSWORD": "",
+    "SERVICE_BUS_CONNECTION": ""
+  }
+}

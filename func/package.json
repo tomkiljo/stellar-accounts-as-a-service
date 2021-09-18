@@ -1,0 +1,33 @@
+{
+  "name": "func",
+  "version": "1.0.0",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "prestart": "yarn run build",
+    "start": "func start",
+    "test": "echo \"No tests yet...\""
+  },
+  "dependencies": {
+    "@azure/identity": "^1.5.2",
+    "@types/yup": "^0.29.13",
+    "bcrypt": "^5.0.1",
+    "js-big-decimal": "^1.3.4",
+    "moment": "^2.29.1",
+    "node-cache": "^5.1.2",
+    "stellar-sdk": "^8.3.0",
+    "tedious": "^12.2.0",
+    "uuid": "^8.3.2",
+    "yup": "^0.32.9"
+  },
+  "devDependencies": {
+    "@azure/functions": "^1.2.3",
+    "@types/bcrypt": "^5.0.0",
+    "@types/tedious": "^4.0.5",
+    "@types/uuid": "^8.3.1",
+    "ts-node": "^10.2.1",
+    "typescript": "^4.0.0"
+  }
+}
