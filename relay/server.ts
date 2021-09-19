@@ -86,11 +86,7 @@ const server = new Server(horizonEndpoint);
 const client = !dryRun ? new ServiceBusClient(connectionString) : undefined;
 const sender = client?.createSender(queueName);
 
-app.get("/health", (req, res) => {
-  res.status(204);
-});
-
-app.get("/status", (req, res) => {
+app.get("/", (req, res) => {
   res.json(status);
 });
 
@@ -127,7 +123,7 @@ app.listen(port, () => {
       },
     });
 
-  console.info(`Relay running at https://localhost:${port}`);
+  console.info(`Relay running at localhost:${port}`);
   console.info(`  stellar account id : ${accountId}`);
   console.info(`  horizon endpoint   : ${horizonEndpoint}`);
   console.info(`  reconnect timeout  : ${reconnectTimeout}`);

@@ -4,10 +4,11 @@
   "license": "MIT",
   "private": true,
   "scripts": {
+    "start": "yarn run serve",
+    "serve": "node dist/server.js",
     "build": "tsc",
     "watch": "tsc -w",
-    "prestart": "yarn run build",
-    "start": "nodemon server.ts"
+    "watch-node": "nodemon servet.ts"
   },
   "dependencies": {
     "@azure/service-bus": "^7.3.0",
