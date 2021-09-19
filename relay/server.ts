@@ -52,7 +52,9 @@ const relayRecords = async (
       const message: ServiceBusMessage = {
         body: records[i],
       };
-      if (!batch.tryAddMessage(message)) await sender.sendMessages(batch);
+      if (!batch.tryAddMessage(message)) {
+        await sender.sendMessages(batch);
+      }
       batch = await sender.createMessageBatch();
       if (!batch.tryAddMessage(message)) {
         throw new Error("Record too big to fit in a batch");
