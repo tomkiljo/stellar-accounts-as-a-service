@@ -30,12 +30,12 @@ const serviceBusQueueTrigger: AzureFunction = async (
   // - the target user account exists
   const amountNormalized = BigInt(BigDecimal.multiply(payment.amount, 10 ** 7));
   await execute(
-    "EXEC [Stellar].[ProcessDeposit] @userid, @amount, @oparationid, @transactionhash",
+    "EXEC [Stellar].[ProcessDeposit] @userid, @amount, @operationId, @transactionHash",
     {
       userid: parseInt(muxedId),
       amount: amountNormalized,
-      operationid: payment.id,
-      transactionhash: payment.transaction_hash,
+      operationId: payment.id,
+      transactionHash: payment.transaction_hash,
     }
   );
 };
