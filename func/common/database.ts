@@ -20,6 +20,7 @@ export type OutputParameter = {
 };
 
 export type DatabaseResult = {
+  label?: string;
   rowCount: number;
   rows: Array<ColumnValue[]>;
   outputParameters: Record<string, OutputParameter>;
@@ -75,11 +76,13 @@ export const execute = (
     string,
     bigint | boolean | string | number | undefined | null | Parameter
   > = {},
-  outputParameters: Record<string, TediousType> = {}
+  outputParameters: Record<string, TediousType> = {},
+  label?: string
 ) =>
   new Promise<DatabaseResult>((resolve, reject) => {
     connect().then((connection) => {
       const result: DatabaseResult = {
+        label: label,
         rowCount: 0,
         rows: [],
         outputParameters: {},

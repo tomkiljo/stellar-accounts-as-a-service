@@ -1,5 +1,6 @@
 import { Account, Asset, Keypair, Memo, MuxedAccount } from "stellar-base";
 import {
+  AccountResponse,
   Horizon,
   Networks,
   Operation,
@@ -46,4 +47,12 @@ export const makePayment = async (
 export const muxedAccount = async (id: number): Promise<MuxedAccount> => {
   const custodian = await fetchCustodian();
   return new MuxedAccount(custodian, id.toString());
+};
+
+export const loadAccount = (
+  accountId: string
+): Promise<AccountResponse | undefined> => {
+  return server.loadAccount(accountId).catch((error) => {
+    return undefined;
+  });
 };

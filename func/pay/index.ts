@@ -4,7 +4,7 @@ import * as yup from "yup";
 import { authenticate, AuthenticationError } from "../common/auth";
 import { HttpResponseBuilder } from "../common/http";
 import BigDecimal from "js-big-decimal";
-import { makePayment, muxedAccount } from "../common/stellar";
+import { loadAccount, makePayment, muxedAccount } from "../common/stellar";
 import { execute } from "../common/database";
 import { v4 } from "uuid";
 
@@ -33,7 +33,7 @@ const httpTrigger: AzureFunction = async (
       BigDecimal.multiply(data.body.amount, 10 ** 7)
     );
 
-    // preflight balance check
+    // check account has sufficient balance
     if (amountNormalized > userInfo.balance) {
       context.res = HttpResponseBuilder.error(
         409,
@@ -42,9 +42,19 @@ const httpTrigger: AzureFunction = async (
       return;
     }
 
+    // check that the destination account exists
+    const destination = await loadAccount(data.body.destination);
+    if (!destination) {
+      context.res = HttpResponseBuilder.error(
+        404,
+        "Destination not found"
+      ).build();
+      return;
+    }
+
     // create a balance reservation
     const reservationid = v4();
-    await execute(
+    let result = await execute(
       "EXEC [Stellar].[ReservePayment] @userid, @reservationid, @amount",
       {
         userid: parseInt(userAccount.id()),
@@ -54,22 +64,40 @@ const httpTrigger: AzureFunction = async (
     );
 
     // make the payment
-    await makePayment(userAccount, data.body.destination, data.body.amount)
+    result = await makePayment(
+      userAccount,
+      destination.accountId(),
+      data.body.amount
+    )
       .then((result) => {
         // payment succeeded, confirm payment
-        execute("EXEC [Stellar].[ConfirmPayment] @reservationid", {
-          reservationid: reservationid,
-        });
+        return execute(
+          "EXEC [Stellar].[ConfirmPayment] @reservationid",
+          {
+            reservationid: reservationid,
+          },
+          undefined,
+          "confirm"
+        );
       })
       .catch((error) => {
         // payment failed, cancel reservation
-        execute("EXEC [Stellar].[CancelPayment] @reservationid", {
-          reservationid: reservationid,
-        });
-        throw new Error("Payment failed");
+        context.log.error("Payment failed", error);
+        return execute(
+          "EXEC [Stellar].[CancelPayment] @reservationid",
+          {
+            reservationid: reservationid,
+          },
+          undefined,
+          "cancel"
+        );
       });
 
-    context.res = HttpResponseBuilder.noContent().build();
+    if (result.label === "confirm") {
+      context.res = HttpResponseBuilder.noContent().build();
+    } else {
+      context.res = HttpResponseBuilder.error(500).build();
+    }
   } catch (error) {
     if (error instanceof ValidationError) {
       const message = (error as ValidationError).message;
