@@ -28,6 +28,35 @@
       "options": {
         "cwd": "${workspaceFolder}/func"
       }
+    },
+    {
+      "type": "shell",
+      "label": "yarn start (relay)",
+      "command": "yarn start",
+      "problemMatcher": "$tsc",
+      "isBackground": true,
+      "dependsOn": "yarn build (relay)",
+      "options": {
+        "cwd": "${workspaceFolder}/relay"
+      }
+    },
+    {
+      "type": "shell",
+      "label": "yarn build (relay)",
+      "command": "yarn run build",
+      "dependsOn": "yarn install (relay)",
+      "problemMatcher": "$tsc",
+      "options": {
+        "cwd": "${workspaceFolder}/relay"
+      }
+    },
+    {
+      "type": "shell",
+      "label": "yarn install (relay)",
+      "command": "yarn install",
+      "options": {
+        "cwd": "${workspaceFolder}/relay"
+      }
     }
   ]
 }

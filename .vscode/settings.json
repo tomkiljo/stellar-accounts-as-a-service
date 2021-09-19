@@ -1,7 +1,15 @@
 {
   "azureFunctions.deploySubpath": "func",
-  "azureFunctions.postDeployTask": "yarn install (functions)",
+  "azureFunctions.preDeployTask": "yarn build (functions)",
   "azureFunctions.projectLanguage": "TypeScript",
   "azureFunctions.projectRuntime": "~3",
+  "appService.deploySubpath": "relay",
+  "appService.preDeployTask": "yarn build (relay)",
+  "appService.zipIgnorePattern": [
+    ".gitignore",
+    ".env",
+    "example.env",
+    ".vscode{,/**}"
+  ],
   "debug.internalConsoleOptions": "neverOpen"
 }

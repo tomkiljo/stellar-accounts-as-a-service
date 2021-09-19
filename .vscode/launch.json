@@ -7,6 +7,13 @@
       "request": "attach",
       "port": 9229,
       "preLaunchTask": "func: host start"
+    },
+    {
+      "name": "Attach to Node Server",
+      "type": "node",
+      "request": "attach",
+      "port": 9228,
+      "preLaunchTask": "yarn start (relay)"
     }
   ]
 }
