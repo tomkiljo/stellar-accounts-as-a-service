@@ -3,6 +3,8 @@
 Stellar Account as as Service create for [Stellar Quest Bounties](https://github.com/tyvdh/stellar-quest-bounties/).
 Simple custodial wallet service using muxed accounts for managing user payment transactions.
 
+## Overview
+
 The implementation is targeted for Microsoft Azure making use of it's service offerings.
 
 ![architecture](./assets/architecture.png)
@@ -15,6 +17,25 @@ The overall architecture is composed of:
 - **Payments Service Bus Queue**, for handling messaging between relay and function logic
 - **Payment Function**, for handling payment events targeted for muxed accounts
 - **Azure SQL Database**, for storing the application data
+
+### Project structure
+
+```
+.
+├── assets                    # documentation assets
+├── db                        # sql migration files
+├── func                      # function app src
+│   ├── common                # common libs and logic
+│   ├── info                  # function: http trigger /info
+│   ├── login                 # function: http trigger /login
+│   ├── pay                   # function: http trigger /pay
+│   ├── payment               # function: service bus trigger
+│   ├── register              # function: http trigger /register
+│   └── ...
+├── relay                     # relay app src
+├── postman_collection.json   # postman collection for testing
+└── ...
+```
 
 ## Usage
 
