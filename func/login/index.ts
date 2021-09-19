@@ -1,4 +1,4 @@
-import { AzureFunction, Context, HttpRequest } from "@azure/functions"
+import { AzureFunction, Context, HttpRequest } from "@azure/functions";
 import { Asserts, ValidationError } from "yup";
 import * as yup from "yup";
 import * as bcrypt from "bcrypt";
@@ -9,26 +9,25 @@ import { v4 } from "uuid";
 
 const RequestSchema = yup.object({
   body: yup.object({
-    username: yup
-    .string()
-    .required(),
-    password: yup
-    .string()
-    .required(),
-  })
-})
+    username: yup.string().required(),
+    password: yup.string().required(),
+  }),
+});
 
-interface RequestData extends Asserts<typeof RequestSchema> {};
+interface RequestData extends Asserts<typeof RequestSchema> {}
 
-const httpTrigger: AzureFunction = async (context: Context, req: HttpRequest): Promise<void> => {
+const httpTrigger: AzureFunction = async (
+  context: Context,
+  req: HttpRequest
+): Promise<void> => {
   try {
     const data: RequestData = RequestSchema.validateSync(req);
-    
+
     const userQuery = `
       SELECT TOP 1 @userId = [UserID], @password = [Password]
       FROM [Stellar].[Users]
       WHERE [Username] = @username`;
-    
+
     const tokenQuery = `
       MERGE [Stellar].[ApiKeys] AS [target]
       USING (SELECT @userId UserID, @apikey ApiKey) AS [source]
@@ -40,28 +39,39 @@ const httpTrigger: AzureFunction = async (context: Context, req: HttpRequest): P
         VALUES (@UserID, @ApiKey);
     `;
 
-    const result = await execute(userQuery, {
-      username: data.body.username
-    }, {
-      userId: TYPES.Int,
-      password: TYPES.NVarChar
-    }).then((result) => {
-      const authenticated = (result.rowCount === 1 && 
-      bcrypt.compareSync(data.body.password, result.outputParameters.password.value));
+    // query user id and hashed password
+    const result = await execute(
+      userQuery,
+      {
+        username: data.body.username,
+      },
+      {
+        userId: TYPES.Int,
+        password: TYPES.NVarChar,
+      }
+    ).then((result) => {
+      // validate given password
+      const authenticated =
+        result.rowCount === 1 &&
+        bcrypt.compareSync(
+          data.body.password,
+          result.outputParameters.password.value
+        );
       return authenticated ? result : undefined;
     });
 
     if (result) {
+      // create and store new api key in db
       const apiKey = v4();
       const salt = process.env["API_KEY_SALT"]!;
       const hash = bcrypt.hashSync(apiKey, salt);
-      bcrypt.genSaltSync()
+      bcrypt.genSaltSync();
       await execute(tokenQuery, {
         userId: result.outputParameters.userId.value,
         apiKey: hash,
       });
       context.res = HttpResponseBuilder.ok({
-        apiKey: apiKey
+        apiKey: apiKey,
       });
     } else {
       context.res = HttpResponseBuilder.error(401);

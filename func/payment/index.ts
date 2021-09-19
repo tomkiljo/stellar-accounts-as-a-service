@@ -25,29 +25,19 @@ const serviceBusQueueTrigger: AzureFunction = async (
     context.log.info("payment not for a muxed account");
     return;
   }
-
-  const amount = BigInt(BigDecimal.multiply(payment.amount, 10 ** 7));
-
-  // TODO idempotent operation handling
-  const updateQuery = `
-    UPDATE TOP (1) [Stellar].[Users]
-    SET [Balance] = [Balance] + @amount
-    WHERE [UserID] = @userid
-  `;
-
-  const result = await execute(updateQuery, {
-    userid: parseInt(muxedId),
-    amount: amount,
-  });
-  if (result.rowCount === 1) {
-    context.log.info(
-      `payment of ${amount}XLM for account id ${muxedId} processed`
-    );
-  } else {
-    context.log.warn(
-      `payment of ${payment.amount} XLM for account id ${muxedId} not processed, account not found`
-    );
-  }
+  // process payment, only has effect on balance if
+  // - operation has not been processed before; and
+  // - the target user account exists
+  const amountNormalized = BigInt(BigDecimal.multiply(payment.amount, 10 ** 7));
+  await execute(
+    "EXEC [Stellar].[ProcessDeposit] @userid, @amount, @oparationid, @transactionhash",
+    {
+      userid: parseInt(muxedId),
+      amount: amountNormalized,
+      operationid: payment.id,
+      transactionhash: payment.transaction_hash,
+    }
+  );
 };
 
 export default serviceBusQueueTrigger;

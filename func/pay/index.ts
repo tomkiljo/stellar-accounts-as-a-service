@@ -33,6 +33,7 @@ const httpTrigger: AzureFunction = async (
       BigDecimal.multiply(data.body.amount, 10 ** 7)
     );
 
+    // preflight balance check
     if (amountNormalized > userInfo.balance) {
       context.res = HttpResponseBuilder.error(
         409,
@@ -41,6 +42,7 @@ const httpTrigger: AzureFunction = async (
       return;
     }
 
+    // create a balance reservation
     const reservationid = v4();
     await execute(
       "EXEC [Stellar].[ReservePayment] @userid, @reservationid, @amount",
@@ -51,24 +53,28 @@ const httpTrigger: AzureFunction = async (
       }
     );
 
-    await makePayment(
-      userAccount,
-      data.body.destination,
-      data.body.amount
-    ).catch((error) => {
-      execute("EXEC [Stellar].[CancelPayment] @reservationid", {
-        reservationid: reservationid,
+    // make the payment
+    await makePayment(userAccount, data.body.destination, data.body.amount)
+      .then((result) => {
+        // payment succeeded, confirm payment
+        execute("EXEC [Stellar].[ConfirmPayment] @reservationid", {
+          reservationid: reservationid,
+        });
+      })
+      .catch((error) => {
+        // payment failed, cancel reservation
+        execute("EXEC [Stellar].[CancelPayment] @reservationid", {
+          reservationid: reservationid,
+        });
+        throw new Error("Payment failed");
       });
-      throw new Error("Stellar transaction failed");
-    });
-
-    await execute("EXEC [Stellar].[ConfirmPayment] @reservationid", {
-      reservationid: reservationid,
-    });
 
     context.res = HttpResponseBuilder.noContent().build();
   } catch (error) {
-    if (error instanceof AuthenticationError) {
+    if (error instanceof ValidationError) {
+      const message = (error as ValidationError).message;
+      context.res = HttpResponseBuilder.error(400, message).build();
+    } else if (error instanceof AuthenticationError) {
       context.res = HttpResponseBuilder.error(401).build();
     } else {
       context.log.error(error);
