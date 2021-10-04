@@ -68,7 +68,7 @@ GO
 --
 CREATE OR ALTER PROCEDURE [Stellar].[ProcessDeposit]
     @UserID          INT,
-    @Amount          INT,
+    @Amount          BIGINT,
     @OperationID     NVARCHAR(100),
     @TransactionHash NVARCHAR(100)
 AS
@@ -96,7 +96,7 @@ GO
 CREATE OR ALTER PROCEDURE [Stellar].[ReservePayment]
     @UserID        INT,
     @ReservationID UNIQUEIDENTIFIER,
-    @Amount        INT
+    @Amount        BIGINT
 AS
 SET NOCOUNT ON;
 BEGIN TRY
