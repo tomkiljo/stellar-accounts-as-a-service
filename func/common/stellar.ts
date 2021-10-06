@@ -1,4 +1,4 @@
-import { Account, Asset, Keypair, Memo, MuxedAccount } from "stellar-base";
+import { Account, Asset, Keypair, MuxedAccount } from "stellar-base";
 import {
   AccountResponse,
   Horizon,
@@ -7,7 +7,6 @@ import {
   Server,
   TransactionBuilder,
 } from "stellar-sdk";
-import BigDecimal from "js-big-decimal";
 
 const server = new Server("https://horizon-testnet.stellar.org");
 const custodian = Keypair.fromSecret(process.env["CUSTODIAN_SECRET"]!);
@@ -16,8 +15,12 @@ const fetchCustodian = async (): Promise<Account> => {
   return await server.loadAccount(custodian.publicKey());
 };
 
+export const custodianAccountId = () => {
+  return custodian.publicKey();
+};
+
 export const makePayment = async (
-  sender: MuxedAccount,
+  userId: number,
   destination: string,
   amount: string
 ): Promise<Horizon.SubmitTransactionResponse> => {
@@ -27,7 +30,9 @@ export const makePayment = async (
     fee: fee.toString(),
     withMuxing: true,
   };
-  const transaction = new TransactionBuilder(sender, options)
+
+  const sender = await muxedAccount(userId);
+  const transaction = new TransactionBuilder(sender.baseAccount(), options)
     .addOperation(
       Operation.payment({
         source: sender.accountId(),
@@ -55,4 +60,11 @@ export const loadAccount = (
   return server.loadAccount(accountId).catch((error) => {
     return undefined;
   });
+};
+
+export const accountExists = (accountId: string): Promise<boolean> => {
+  const baseAddress = accountId.startsWith("M")
+    ? MuxedAccount.fromAddress(accountId, "0").baseAccount().accountId()
+    : accountId;
+  return loadAccount(baseAddress).then((res) => !!res);
 };

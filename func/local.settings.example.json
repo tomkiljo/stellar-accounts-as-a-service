@@ -10,6 +10,7 @@
     "SQLDB_DATABASE": "",
     "SQLDB_USERNAME": "",
     "SQLDB_PASSWORD": "",
+    "PAYMENT_LOCK_CONNECTION": "",
     "SERVICE_BUS_CONNECTION": ""
   }
 }

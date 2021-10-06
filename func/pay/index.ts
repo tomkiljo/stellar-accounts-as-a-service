@@ -4,9 +4,11 @@ import * as yup from "yup";
 import { authenticate, AuthenticationError } from "../common/auth";
 import { HttpResponseBuilder } from "../common/http";
 import BigDecimal from "js-big-decimal";
-import { loadAccount, makePayment, muxedAccount } from "../common/stellar";
+import { accountExists, makePayment, muxedAccount } from "../common/stellar";
 import { execute } from "../common/database";
 import { v4 } from "uuid";
+import { acquirePaymentLock, releasePaymentLock } from "../common/lock";
+import { string } from "yup/lib/locale";
 
 const RequestSchema = yup.object({
   body: yup.object({
@@ -24,10 +26,10 @@ const httpTrigger: AzureFunction = async (
   context: Context,
   req: HttpRequest
 ): Promise<void> => {
+  let paymentLock: string | undefined;
+
   try {
     const userInfo = await authenticate(req);
-    const userAccount = await muxedAccount(userInfo.userId);
-
     const data: RequestData = RequestSchema.validateSync(req);
     const amountNormalized = BigInt(
       BigDecimal.multiply(data.body.amount, 10 ** 7)
@@ -43,8 +45,7 @@ const httpTrigger: AzureFunction = async (
     }
 
     // check that the destination account exists
-    const destination = await loadAccount(data.body.destination);
-    if (!destination) {
+    if (!(await accountExists(data.body.destination))) {
       context.res = HttpResponseBuilder.error(
         404,
         "Destination not found"
@@ -52,12 +53,24 @@ const httpTrigger: AzureFunction = async (
       return;
     }
 
+    // acquire payment lock
+    paymentLock = await acquirePaymentLock();
+    if (!paymentLock) {
+      context.res = HttpResponseBuilder.error(
+        504,
+        "Unable to acquire payment lock"
+      ).build();
+      return;
+    }
+
+    context.log("payment lock acquired");
+
     // create a balance reservation
     const reservationid = v4();
     let result = await execute(
       "EXEC [Stellar].[ReservePayment] @userid, @reservationid, @amount",
       {
-        userid: parseInt(userAccount.id()),
+        userid: userInfo.userId,
         reservationid: reservationid,
         amount: amountNormalized,
       }
@@ -65,8 +78,8 @@ const httpTrigger: AzureFunction = async (
 
     // make the payment
     result = await makePayment(
-      userAccount,
-      destination.accountId(),
+      userInfo.userId,
+      data.body.destination,
       data.body.amount
     )
       .then((result) => {
@@ -107,6 +120,11 @@ const httpTrigger: AzureFunction = async (
     } else {
       context.log.error(error);
       context.res = HttpResponseBuilder.error(500).build();
+    }
+  } finally {
+    if (paymentLock) {
+      await releasePaymentLock(paymentLock);
+      context.log("payment lock released");
     }
   }
 };
